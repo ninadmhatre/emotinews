@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Jobs Dashboard</title>
+    <!-- Tailwind Play CDN (for small projects / dev) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 text-gray-800">
+  <div class="w-full mx-auto p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-semibold">Jobs Dashboard</h1>
+        <div class="flex items-center gap-4">
+          <div>Scheduler status: <span id="sched" class="font-medium">unknown</span></div>
+          <div>
+            <input id="token" placeholder="admin token" class="px-3 py-1 border rounded" value="" />
+            <button id="setToken" class="ml-2 px-3 py-1 bg-blue-600 text-white rounded">Set</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="notify" class="mb-4 text-sm"></div>
+
+      <div class="bg-white shadow rounded overflow-x-auto">
+  <table class="text-sm table-auto w-full min-w-[1200px]">
+
+      <div class="mb-4 flex justify-end">
+        <button id="refreshBtn" class="px-3 py-1 bg-blue-500 text-white rounded flex items-center" title="Refresh">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.635 19.364A9 9 0 1021 12.001h-1"/></svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+          <thead class="bg-gray-100">
+            <tr class="text-left">
+              <th class="px-4 py-3">Task</th>
+              <th class="px-4 py-3">Cron</th>
+              <th class="px-4 py-3">Runs</th>
+              <th class="px-4 py-3">Last Status</th>
+              <th class="px-4 py-3">Last Run</th>
+              <th class="px-4 py-3">Next Run</th>
+              <th class="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-body" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // Simple client-side UI logic. Token is stored in localStorage for convenience.
+      function getToken(){
+        return localStorage.getItem('admin_token') || '';
+      }
+      function setToken(v){
+        localStorage.setItem('admin_token', v || '');
+      }
+
+      document.getElementById('setToken').addEventListener('click', ()=>{
+        const v = document.getElementById('token').value.trim();
+        setToken(v);
+        notify('Token saved');
+        refresh();
+      });
+
+      // populate token input from storage
+      document.getElementById('token').value = getToken();
+
+      function qs(name){ return new URLSearchParams(window.location.search).get(name); }
+
+      function setRefreshing(v){
+        const btn = document.getElementById('refreshBtn');
+        if(!btn) return;
+        btn.disabled = !!v;
+        if(v){
+          // show spinner inline
+          btn.innerHTML = `
+            <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4 mr-1 animate-spin inline-block\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 4v4m0 8v4m8-8h-4M4 12H8\"></path></svg>
+            <span>Refreshing...</span>`;
+        } else {
+          btn.innerHTML = `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4 mr-1\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v5h.582M20 20v-5h-.581M5.635 19.364A9 9 0 1021 12.001h-1\"/></svg><span>Refresh</span>`;
+        }
+      }
+
+      function showButtonLoading(btn, v){
+        if(!btn) return;
+        btn.disabled = !!v;
+        if(v){
+          // disable all buttons in the same actions cell
+          const cell = btn.closest('td');
+          if(cell){ Array.from(cell.querySelectorAll('button')).forEach(b=>b.disabled=true); }
+          const spinner = document.createElement('span');
+          spinner.className = 'inline-block ml-2';
+          spinner.innerHTML = `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4 animate-spin\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v5h.582M20 20v-5h-.581M5.635 19.364A9 9 0 1021 12.001h-1\"/></svg>`;
+          spinner.dataset.temp = 'true';
+          btn.appendChild(spinner);
+        } else {
+          const cell = btn.closest('td');
+          if(cell){ Array.from(cell.querySelectorAll('button')).forEach(b=>b.disabled=false); }
+          const sp = btn.querySelector('span[data-temp]');
+          if(sp) sp.remove();
+        }
+      }
+
+      async function refresh(){
+        const token = getToken();
+        setRefreshing(true);
+        try {
+          const statusRes = await fetch('/jobs/status?token=' + encodeURIComponent(token));
+          if(!statusRes.ok){
+            document.getElementById('sched').innerText = 'unknown';
+            notify('Failed to fetch scheduler status', true);
+            return;
+          }
+          const status = await statusRes.json();
+          const sched = document.getElementById('sched');
+          if(status.running) {
+            sched.innerText = 'Running';
+            sched.className = 'font-medium text-green-600';
+          } else {
+            sched.innerText = 'Stopped';
+            sched.className = 'font-medium text-red-600';
+          }
+
+          const res = await fetch('/jobs/list?token=' + encodeURIComponent(token));
+          if(!res.ok){
+            notify('Failed to fetch jobs list', true);
+            return;
+          }
+          const jobs = await res.json();
+          // Ensure jobs are sorted by ID (task name)
+          jobs.sort((a, b) => a.id.localeCompare(b.id));
+          const tbody = document.getElementById('jobs-body');
+          tbody.innerHTML = '';
+
+          for(const j of jobs){
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+
+            const td = (txt)=>{ const td=document.createElement('td'); td.className='px-4 py-3'; td.innerText = txt || ''; return td };
+
+            tr.appendChild(td(j.id));
+            tr.appendChild(td(j.trigger || ''));
+            tr.appendChild(td(j.run_count != null ? String(j.run_count) : '0'));
+            tr.appendChild(td(j.last_status || ''));
+            const lastRun = j.last_run ? new Date(j.last_run * 1000).toLocaleString() : '';
+            tr.appendChild(td(lastRun));
+            tr.appendChild(td(j.next_run_time || ''));
+
+            const actions = document.createElement('td'); actions.className='px-4 py-3';
+
+            if(j.paused){
+              const start = document.createElement('button');
+              start.innerText='Start';
+              start.className='mr-2 px-3 py-1 rounded bg-green-600 text-white';
+              start.onclick = ()=> action('resume', j.id, start);
+              start.title = 'Start job';
+              actions.appendChild(start);
+              const stop = document.createElement('button');
+              stop.innerText='Stop'; stop.disabled=true;
+              stop.className='mr-2 px-3 py-1 rounded bg-gray-400 text-white opacity-50';
+              stop.title = 'Stop job';
+              actions.appendChild(stop);
+            } else {
+              const stop = document.createElement('button');
+              stop.innerText='Stop';
+              stop.className='mr-2 px-3 py-1 rounded bg-red-600 text-white';
+              stop.onclick = ()=> action('pause', j.id, stop);
+              stop.title = 'Stop job';
+              actions.appendChild(stop);
+              const start = document.createElement('button');
+              start.innerText='Start';
+              start.className='mr-2 px-3 py-1 rounded bg-green-600 text-white opacity-50';
+              start.onclick = ()=> action('resume', j.id, start);
+              start.disabled = true;
+              start.title = 'Start job';
+              actions.appendChild(start);
+            }
+
+            tr.appendChild(actions);
+            tbody.appendChild(tr);
+          }
+        } finally {
+          setRefreshing(false);
+        }
+      }
+
+      async function action(act, job_id, btn){
+        const token = getToken();
+        if(!token){ notify('Set admin token first', true); return }
+        if(btn) showButtonLoading(btn, true);
+
+        try{
+          if(act === 'run'){
+            const r = await fetch(`/jobs/create?job_id=${encodeURIComponent(job_id)}&token=${encodeURIComponent(token)}`);
+            if(!r.ok) { const txt = await r.text(); notify('Run failed: '+txt, true); return }
+            notify('Triggered: ' + job_id);
+            return refresh();
+          }
+
+          const url = `/jobs/admin?action=${encodeURIComponent(act)}&job_id=${encodeURIComponent(job_id)}&token=${encodeURIComponent(token)}`;
+          const resp = await fetch(url, { method: 'GET' });
+          if(!resp.ok){ const txt = await resp.text(); notify('Action failed: '+txt, true); }
+          else { notify('Action successful: ' + act + ' ' + job_id); }
+          await refresh();
+        } catch(e){ notify('Action error: '+e, true) }
+        finally { if(btn) showButtonLoading(btn, false); }
+      }
+
+      function notify(msg, isError){
+        const n = document.getElementById('notify'); n.innerText = msg; n.style.color = isError ? '#dc2626' : '#16a34a';
+        setTimeout(()=>{ n.innerText = '' }, 4000);
+      }
+
+      // initial load
+      refresh();
+  document.getElementById('refreshBtn').addEventListener('click', refresh);
+  setInterval(refresh, 60000);
+    </script>
+  </body>
+</html>
