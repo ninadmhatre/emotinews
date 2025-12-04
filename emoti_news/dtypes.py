@@ -48,14 +48,6 @@ class Categories(enum.StrEnum):
 
 
 class Article:
-    @classmethod
-    def from_dict(
-        cls, country: str, category: str, news_api: str, data: dict[str, Any]
-    ) -> "Article":
-        return cls(
-            country, category, news_api, source, url, title, desc, content, published_at
-        )
-
     def __init__(
         self,
         country: str,
@@ -135,3 +127,48 @@ class JobSpec:
 
     def as_dict(self) -> dict[str, Any]:
         return dc.asdict(self)
+
+
+class Sentiment(StrEnum):
+    Neutral = "neutral"
+    Positive = "positive"
+    Negative = "negative"
+
+
+class Clickbait(enum.Enum):
+    Yes = 1
+    No = 0
+    Unknown = -1
+
+
+@dc.dataclass(frozen=True)
+class RawModelRequest:
+    uid: str
+    title: str
+    description: Optional[str]
+    category: Optional[str]
+    country: Optional[str]
+
+
+class ModelRequest:
+    def __init__(self, data: RawModelRequest, prompt: str, model: str, max_tokens: int = 1000):
+        self.data = data
+        self.prompt = prompt
+        self.model = model
+        self.max_tokens = max_tokens
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "data": self.data,
+            "prompt": self.prompt,
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+        }
+
+
+class ModelResponse:
+    def __init__(self, uid: str, sentiment: Sentiment, confidence: float, clickbait: Clickbait):
+        self.uid = uid
+        self.sentiment = sentiment
+        self.confidence = confidence
+        self.clickbait = clickbait

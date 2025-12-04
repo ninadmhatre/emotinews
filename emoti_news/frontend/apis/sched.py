@@ -7,6 +7,7 @@ from emoti_news.frontend.apis import has_token
 from emoti_news.jobs import scheduler, JOB_MAP
 from emoti_news.loggers import backend_logger as log
 
+
 class _Status(StrEnum):
     Started = "Started"
     AlreadyRunning = "AlreadyRunning"
@@ -15,11 +16,8 @@ class _Status(StrEnum):
     NotRunning = "NotRunning"
 
 
-sched = APIRouter(
-    prefix="/sched",
-    tags=["Scheduler"],
-    dependencies=[Depends(has_token)]
-)
+sched = APIRouter(prefix="/sched", tags=["Scheduler"], dependencies=[Depends(has_token)])
+
 
 @sched.get("/admin", summary="Check scheduler status")
 async def admin_sched(action: Literal["start", "shutdown", "status"]):
@@ -41,4 +39,3 @@ async def admin_sched(action: Literal["start", "shutdown", "status"]):
         _status = _Status.Running if scheduler.running else _Status.NotRunning
 
     return {"status": _status}
-

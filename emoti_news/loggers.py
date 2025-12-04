@@ -53,9 +53,7 @@ def set_log_level(level: str, logger_name: Optional[str | LoggerNames] = None):
 
     if logger_name:
         if logger_name not in LOGGERS:
-            raise ValueError(
-                f"Unknown logger: {logger_name}. Available loggers: {list(LOGGERS.keys())}"
-            )
+            raise ValueError(f"Unknown logger: {logger_name}. Available loggers: {list(LOGGERS.keys())}")
 
         _logger = LOGGERS[logger_name]
         _logger.setLevel(level_int)
@@ -64,9 +62,7 @@ def set_log_level(level: str, logger_name: Optional[str | LoggerNames] = None):
         # Update all loggers
         for name, logger in LOGGERS.items():
             logger.setLevel(level_int)
-            logger.info(
-                f"Log level for {name} set to {logging.getLevelName(level_int)}"
-            )
+            logger.info(f"Log level for {name} set to {logging.getLevelName(level_int)}")
 
 
 _setup_loggers()

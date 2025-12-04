@@ -72,9 +72,7 @@ class NewsDataIOProvider(API):
                         top_headlines = self._get_top_headlines(url)
 
                         if top_headlines["status"] != "success":
-                            log.error(
-                                f"API returned Not-Ok response for '{country}.{category}'"
-                            )
+                            log.error(f"API returned Not-Ok response for '{country}.{category}'")
                             error = "API retuned 'Not-Ok'"
                             top_headlines = {}
                             rows_fetched = 0
@@ -89,9 +87,7 @@ class NewsDataIOProvider(API):
                         }
                     )
 
-                    log.debug(
-                        f"Got {len(top_headlines)} headlines for {country}.{category} [error={error}]"
-                    )
+                    log.debug(f"Got {len(top_headlines)} headlines for {country}.{category} [error={error}]")
                     headlines[country][category] = top_headlines
 
         return headlines
@@ -104,9 +100,7 @@ class NewsDataIOProvider(API):
         for country in response:
             for category in response[country]:
                 for article in response[country][category]["results"]:
-                    published_at_dt = dt.datetime.fromisoformat(
-                        article["pubDate"]
-                    ).date()
+                    published_at_dt = dt.datetime.fromisoformat(article["pubDate"]).date()
                     if published_at_dt < cutoff_date:
                         continue
 
@@ -133,9 +127,7 @@ class NewsDataIOProvider(API):
         insert_article(articles)
 
 
-def entrypoint(
-    countries: list[Country], categories: list[Category], persist: bool = True
-) -> list[Article]:
+def entrypoint(countries: list[Country], categories: list[Category], persist: bool = True) -> list[Article]:
     """Main entry point for the API provider"""
     api = NewsDataIOProvider()
 

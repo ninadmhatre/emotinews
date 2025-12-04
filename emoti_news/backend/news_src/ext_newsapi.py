@@ -45,14 +45,10 @@ class NewsApiOrgProvider(API):
                 with CaptureCallStatus(country, category) as status:
                     error = None
                     with TimeIt() as tm:
-                        top_headlines = self._get_top_headlines(
-                            category=category, country=country
-                        )
+                        top_headlines = self._get_top_headlines(category=category, country=country)
 
                         if top_headlines["status"] != "ok":
-                            log.error(
-                                f"API returned Not-Ok response for '{country}.{category}'"
-                            )
+                            log.error(f"API returned Not-Ok response for '{country}.{category}'")
                             error = "API retuned 'Not-Ok'"
                             top_headlines = {}
 
@@ -64,9 +60,7 @@ class NewsApiOrgProvider(API):
                         }
                     )
 
-                    log.debug(
-                        f"Got {len(top_headlines)} headlines for {country}.{category} [error={error}]"
-                    )
+                    log.debug(f"Got {len(top_headlines)} headlines for {country}.{category} [error={error}]")
                     headlines[country][category] = top_headlines
 
         return headlines
@@ -79,9 +73,7 @@ class NewsApiOrgProvider(API):
         for country in response:
             for category in response[country]:
                 for article in response[country][category]["articles"]:
-                    published_at_dt = dt.datetime.fromisoformat(
-                        article["publishedAt"]
-                    ).date()
+                    published_at_dt = dt.datetime.fromisoformat(article["publishedAt"]).date()
                     if published_at_dt < cutoff_date:
                         continue
 
@@ -106,9 +98,7 @@ class NewsApiOrgProvider(API):
         insert_article(articles)
 
 
-def entrypoint(
-    countries: list[Country], categories: list[Category], persist: bool = True
-) -> list[Article]:
+def entrypoint(countries: list[Country], categories: list[Category], persist: bool = True) -> list[Article]:
     """Main entry point for the API provider"""
     api = NewsApiOrgProvider()
 

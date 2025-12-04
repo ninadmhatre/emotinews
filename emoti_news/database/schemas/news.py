@@ -69,9 +69,7 @@ class News(Base):
     clickbait: Mapped[bool] = mapped_column(default=False)
     news_api: Mapped[str] = mapped_column(String(12))
     created_at: Mapped[dt.datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[dt.datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[dt.datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
     UniqueConstraint(uid)
 

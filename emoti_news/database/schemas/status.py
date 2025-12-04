@@ -47,9 +47,7 @@ class Status(Base):
     status: Mapped[str] = mapped_column(String(12))
     meta = mapped_column(JSON)
     created_at: Mapped[dt.datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[dt.datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[dt.datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
     # Insert a unique constraint on job_id + run_date + hour_min
     UniqueConstraint("job_id", "run_date", "hour_min", name="uniq_job_id_hour_of_day")

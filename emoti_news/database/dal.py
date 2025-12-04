@@ -28,11 +28,7 @@ def update_status(
     with DB.get_engine().connect() as conn:
         stmt = (
             update(Status)
-            .where(
-                (Status.job_id == job_id)
-                & (Status.run_date == run_date)
-                & (Status.hour_min == hour_min)
-            )
+            .where((Status.job_id == job_id) & (Status.run_date == run_date) & (Status.hour_min == hour_min))
             .values(status=status.upper(), meta=meta)
         )
         conn.execute(stmt)
@@ -57,9 +53,7 @@ def insert_article(articles: list[Article]):
                     else:
                         failure_reason = "Unknown"
 
-                    log.warning(
-                        f"Failed: {failure_reason}: {article.uid}, skipping [{article}] exception: {e}"
-                    )
+                    log.warning(f"Failed: {failure_reason}: {article.uid}, skipping [{article}] exception: {e}")
                 except Exception as e:
                     log.error(f"Error inserting articles: {e}")
                     conn.rollback()

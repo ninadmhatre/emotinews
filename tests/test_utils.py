@@ -159,9 +159,7 @@ class TestCaptureCallStatus:
 
                     # check inner status
 
-                    assert status_inner.job_id == status_outer.job_id, (
-                        "Jobs ID should match!"
-                    )
+                    assert status_inner.job_id == status_outer.job_id, "Jobs ID should match!"
 
                     result = self._get_status_by_id(status_inner.job_id, sqlite_db)
                     assert result is not None, "Failed status record not found"
@@ -184,9 +182,7 @@ class TestCaptureCallStatus:
             with CaptureCallStatus("US", "business") as status:
                 # Check if status is set to IN_PROGRESS
                 with postgres_db.connect() as conn:
-                    result = conn.execute(
-                        select(Status).where(Status.job_id == status.job_id)
-                    ).first()
+                    result = conn.execute(select(Status).where(Status.job_id == status.job_id)).first()
                     assert result is not None, "Status record not found"
                     assert result.status == JobStatus.IN_PROGRESS.value
 

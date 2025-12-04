@@ -37,7 +37,7 @@ def create_job(job_id: str):
 def list_jobs():
     out = []
 
-    for job in sorted(scheduler.get_jobs(), key=lambda j: getattr(j, 'id', '')):
+    for job in sorted(scheduler.get_jobs(), key=lambda j: getattr(j, "id", "")):
         runs = RUN_LOGS.get(job.id, [])
         last_status = runs[0]["status"] if runs else None
         last_ts = runs[0]["ts"] if runs else None

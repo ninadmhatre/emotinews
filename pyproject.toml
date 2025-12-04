@@ -1,6 +1,6 @@
 [project]
 name = "emotinews"
-version = "0.1.0"
+version = "0.2.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,9 +10,11 @@ dependencies = [
     "fastapi>=0.121.3",
     "httpx>=0.28.1",
     "newsapi-python>=0.2.7",
+    "nltk==3.9.2",
     "python-dotenv[cli]>=1.2.1",
     "pytz>=2025.2",
     "sqlalchemy>=2.0.44",
+    "together==1.5.30",
     "uvicorn>=0.38.0",
 ]
 
@@ -28,3 +30,6 @@ dev = [
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 120

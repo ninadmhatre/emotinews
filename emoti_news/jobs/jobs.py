@@ -8,7 +8,12 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.executors.pool import ProcessPoolExecutor
-from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ADDED, EVENT_JOB_ERROR, EVENT_JOB_MODIFIED
+from apscheduler.events import (
+    EVENT_JOB_EXECUTED,
+    EVENT_JOB_ADDED,
+    EVENT_JOB_ERROR,
+    EVENT_JOB_MODIFIED,
+)
 
 from emoti_news.dtypes import Counties, Categories, JobSpec
 from emoti_news.loggers import backend_logger as log
@@ -27,7 +32,12 @@ MAX_RUNS_PER_JOB = 50
 def log_run(job_id: str, status: str, detail: dict):
     RUN_LOGS.setdefault(job_id, [])
     RUN_LOGS[job_id].insert(
-        0, {"ts": detail.get("ts") if "ts" in detail else __import__("time").time(), "status": status, "detail": detail}
+        0,
+        {
+            "ts": detail.get("ts") if "ts" in detail else __import__("time").time(),
+            "status": status,
+            "detail": detail,
+        },
     )
     if len(RUN_LOGS[job_id]) > MAX_RUNS_PER_JOB:
         RUN_LOGS[job_id].pop()
@@ -37,10 +47,18 @@ def _on_completion(event: JobExecutionEvent):
     # record run and log
     if event.exception:
         log.error(f"Job {event.job_id} failed: {event.exception}")
-        log_run(event.job_id, "error", {"exception": str(event.exception), "ts": __import__("time").time()})
+        log_run(
+            event.job_id,
+            "error",
+            {"exception": str(event.exception), "ts": __import__("time").time()},
+        )
     else:
         log.info(f"Job {event.job_id} succeeded: {event.retval}")
-        log_run(event.job_id, "success", {"retval": event.retval, "ts": __import__("time").time()})
+        log_run(
+            event.job_id,
+            "success",
+            {"retval": event.retval, "ts": __import__("time").time()},
+        )
 
 
 def _on_job_added(event: JobExecutionEvent):

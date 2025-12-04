@@ -78,9 +78,8 @@ class CaptureCallStatus:
 
     def update_status(self, status: JobStatus | str):
         """Update an existing status record"""
-        return update_status(
-            self.job_id, self.run_date, self.hour_min, self.meta, status
-        )
+        return update_status(self.job_id, self.run_date, self.hour_min, self.meta, status)
+
 
 class TimeIt:
     """A context manager for measuring execution time of code blocks.
@@ -159,9 +158,7 @@ class _DCache:
         self.cache = Cache(directory=self.cache_dir, timeout=self.ttl)
 
     def get_status(self) -> str:
-        return f"Cache Status: {self.enabled=}, {self.ttl=}, {self.cache_dir=}".replace(
-            "self.", ""
-        )
+        return f"Cache Status: {self.enabled=}, {self.ttl=}, {self.cache_dir=}".replace("self.", "")
 
     @staticmethod
     def generate_key(is_cls_method: bool, func: Callable, *args, **kwargs) -> str:
@@ -242,81 +239,6 @@ def dcache(is_cls_method: bool = False, ttl: Optional[int] = None):
         return wrapper
 
     return inner
-
-
-# class EnvSetup:
-#     """Environment setup utility for database management."""
-#
-#     def __init__(self):
-#         """Initialize the environment setup utility."""
-#         self.engine = DB.get_engine()
-#
-#     def _get_table_info(self) -> dict[str, Any]:
-#         """Get information about database tables."""
-#         inspector = inspect(self.engine)
-#         tables = inspector.get_table_names()
-#
-#         table_info: dict[str, Any] = {}
-#
-#         with self.engine.connect() as conn:
-#             for table in tables:
-#                 # Get column information
-#                 columns = inspector.get_columns(table)
-#                 col_info = [f"{col['name']}: {str(col['type'])}" for col in columns]
-#
-#                 # Get row count
-#                 try:
-#                     result = conn.execute(text(f"SELECT COUNT(*) FROM {table}"))
-#                     row_count = result.scalar()
-#                 except Exception:
-#                     row_count = -1  # Indicate error in counting
-#
-#                 table_info[table] = {
-#                     "columns": sorted(col_info),  # Sorted for consistent display
-#                     "row_count": row_count,
-#                 }
-#
-#         return table_info
-#
-#     def check(self) -> Dict[str, Any]:
-#         """Check the current database environment status."""
-#         try:
-#             with self.engine.connect() as conn:
-#                 conn.execute(text("SELECT 1"))
-#
-#             info: dict[str, Any] = {
-#                 "database": {
-#                     "type": DB.db_type,
-#                     "connection": "success",
-#                     "url": str(self.engine.url),
-#                 },
-#                 "tables": self._get_table_info(),
-#             }
-#             return info
-#         except Exception as e:
-#             return {
-#                 "database": {
-#                     "type": DB.db_type,
-#                     "connection": "failed",
-#                     "error": str(e),
-#                 }
-#             }
-#
-#     def create(self) -> dict[str, Any]:
-#         """Create database tables if they don't exist."""
-#         Base.metadata.create_all(self.engine)
-#         return self.check()
-#
-#     def delete(self) -> dict[str, Any]:
-#         """Delete all database tables."""
-#         Base.metadata.drop_all(self.engine)
-#         return self.check()
-#
-#     def recreate(self) -> dict[str, Any]:
-#         """Recreate all database tables (delete and create)."""
-#         self.delete()
-#         return self.create()
-
 
 def pretty_print(val):
     if isinstance(val, dict):
